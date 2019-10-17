@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/chessboard.min.css">
+
+    <script src="js/jquery2x.min.js"></script>
+    <script src="js/chess.js"></script>
+    <script src="js/chessboard.js"></script>
+
+    <title>Xadrez</title>
+</head>
+<body>
+    <!-- Used to get images -->
+    <h3 class="board">
+    XADREZ COM IA EM JS
+    </h3>
+    <div id="board" class="board"></div>
+    <br>
+    <div class="info">
+        <div id="move-history" class="move-history">
+        </div>
+    </div>  
+    
+    <script>
+    $( document ).ready(function() {
+        var board, game = new Chess();
+
+        //Nossa IA começa aqui
+        var calculateBestMove = function(game) {
+            var newGameMoves = game.ugly_moves();
+            return newGameMoves[Math.floor(Math.random() * newGameMoves.length)];
+        }
+
+        //Inicia o tabuleiro
+        var onDragStart = function(source, piece, position, orientation){
+            if(game.in_checkmate() === true || game.in_draw() === true ||
+            piece.search(/^b/) !== -1){
+                return false;
+            }
+        }
+
+        var makeBestMove = function() {
+            var bestMove = getBestMove(game);
+            game.ugly_move(bestMove);
+            board.position(game.fen());
+            rederMoveHistory(game.history());
+            if(game.game_over()){
+                alert('Game Over');
+            }
+        }
+
+        var getBestMove = function(game){
+            if(game.game_over()){
+                alert('Game Over');
+            }
+            var bestMove = calculateBestMove(game);
+            return bestMove;
+        }
+
+        var renderMoveHistory = function(moves){
+            var historyElement = $('#move-history').empty();
+            historyElement.empty();
+            for (let i = 0; i < moves.length; i++) {
+                historyElement.append('<span>'+ moves[i] + ' ' + 
+                    ( moves[i+1] ? moves[i + 1] : ' ' ) + '</span><br>' );
+            }
+            historyElement.scrollTop(historyElement[0].scrollHeight);
+        }
+        
+        var onDrop = function (source, target){
+            var move = game.move({
+                from: source,
+                to: target,
+                promotion: 'q'
+            });
+
+            removeGreySquares();
+            if(move == null){
+                return 'snapback';
+            }
+
+            renderMoveHistory(game.history());
+            window.setTimeout(makeBestMove, 250);
+        };
+
+        var onSnapEnd = function(){
+            board.position(game.fen());
+        }
+
+        var onMouseoverSquare = function(square, piece) {
+            var moves = game.moves({
+                square: square,
+                verbose: true
+            });
+
+            if(moves.length === 0) return;
+
+            greySquare(square);
+
+            for (let index = 0; index < moves.length; index++) {
+                greySquare(moves[index].to);
+            }
+        }
+
+        var onMouseoutSquare = function(square, piece) {
+            removeGreySquares();
+        }
+
+        var removeGreySquares = function() {
+            $('#board .square-55d63').css('background','');
+        }
+
+        var greySquare = function(square){
+            var squareEl = $('#board .square-'+square);
+
+            var background = "#a9a9a9";
+            if(squareEl.hasClass('black-3c85d') === true){
+                background = '#696969';
+            }
+            squareEl.css('background', background);
+        }
+
+        var cfg = {
+            draggable: true,
+            position: 'start',
+            onDragStart: onDragStart,
+            onDrop: onDrop,
+            onMouseoutSquare: onMouseoutSquare,
+            onMouseoverSquare: onMouseoverSquare,
+            onSnapEnd: onSnapEnd
+        };
+
+        board = ChessBoard('board', cfg);
+
+
+    });
+    </script>
+    
+</body>
+</html>
+
